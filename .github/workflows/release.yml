@@ -40,7 +40,7 @@ jobs:
           npm install -g conventional-changelog-cli
 
           # Generate the changelog since the penultimate release
-          changelog=$(conventional-changelog -p angular -r 0...${{ env.LAST_RELEASE_TAG }})
+          changelog=$(conventional-changelog -0 -r 0...${{ env.LAST_RELEASE_TAG }})
 
           # Escape newlines in the changelog before setting it as an environment variable
           escaped_changelog=$(echo "$changelog" | awk '{printf "%s\\n", $0}')
