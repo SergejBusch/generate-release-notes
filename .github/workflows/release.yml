@@ -1,20 +1,38 @@
-name: Create release
+name: Update Release Notes
+
 on:
-  workflow_dispatch:
-    inputs:
-      release_version:
-        description: ‘Version to be released. Git tag with this name will be created.’
-        required: true
-        default: ‘0.0.0’
+  release:
+    types: [created]
+
 jobs:
   release:
-    name: Release pushed tag
-    runs-on: ubuntu-22.04
+    name: Release
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Create release
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run semantic-release
+        run: npx semantic-release
+
+      - name: Update Release Description
+        run: |
+          # Get the latest release ID
+          release_id=$(curl -s -X GET "https://api.github.com/repos/${{ github.repository }}/releases/latest" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
+
+          # Get the generated release notes from semantic-release
+          release_notes=$(curl -s -X GET "https://api.github.com/repos/${{ github.repository }}/releases/${release_id}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.body')
+
+          # Update the release description with the release notes
+          curl -s -X PATCH "https://api.github.com/repos/${{ github.repository }}/releases/${release_id}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" -d "{\"body\": $release_notes}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create ${{ github.event.inputs.release_version }} \
-              --repo=“$GITHUB_REPOSITORY” \
-              --generate-notes
