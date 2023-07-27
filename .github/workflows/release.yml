@@ -13,11 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create Release
+      - name: Update Release Description
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create ${{ github.event.release.tag_name }} --title ${{ github.event.release.tag_name }} --notes ""
-
-      - name: Update Release Description
         run: |
-          echo "bla bla" | gh release edit ${{ github.event.release.tag_name }} --notes -
+          # Fetch the last release's tag name using gh CLI
+          last_tag=$(gh release list --limit 1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1)
+
+          # Check if the current release is the last one
+          if [ "${{ github.event.release.tag_name }}" = "$last_tag" ]; then
+            # Append "bla bla" to the release description using gh CLI
+            echo "bla bla" | gh release edit "${{ github.event.release.tag_name }}" --notes -
+          else
+            echo "This is not the last release. Skipping update."
+          fi
