@@ -1,38 +1,33 @@
-name: Update Release Notes
-
-on:
-  release:
-    types: [created]
-
+name: Release
+"on":
+  push:
+    branches:
+      - master
+      - next
+      - beta
+      - "*.x"
+permissions:
+  contents: read # for checkout
 jobs:
   release:
-    name: Release
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC for npm provenance
+    name: release
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Node.js
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@3
+      - uses: actions/setup-node@e3
         with:
-          node-version: '16'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run semantic-release
-        run: npx semantic-release
-
-      - name: Update Release Description
-        run: |
-          # Get the latest release ID
-          release_id=$(curl -s -X GET "https://api.github.com/repos/${{ github.repository }}/releases/latest" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.id')
-
-          # Get the generated release notes from semantic-release
-          release_notes=$(curl -s -X GET "https://api.github.com/repos/${{ github.repository }}/releases/${release_id}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" | jq '.body')
-
-          # Update the release description with the release notes
-          curl -s -X PATCH "https://api.github.com/repos/${{ github.repository }}/releases/${release_id}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" -d "{\"body\": $release_notes}"
+          cache: npm
+          node-version: lts/*
+      - run: npm clean-install
+      - run: npm audit signatures
+      # pinned version updated automatically by Renovate.
+      # details at https://semantic-release.gitbook.io/semantic-release/usage/installation#global-installation
+      - run: npx semantic-release@21.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.SEMANTIC_RELEASE_BOT_NPM_TOKEN }}
