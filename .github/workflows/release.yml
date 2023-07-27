@@ -14,6 +14,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release create ${{ github.event.release.tag_name }} --title ${{ github.event.release.tag_name }} --notes ""
 
       - name: Update Release Description
