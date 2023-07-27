@@ -40,7 +40,7 @@ jobs:
           npm install -g conventional-changelog-cli
 
           # Generate the changelog since the penultimate release
-          conventional-changelog -p angular -i CHANGELOG.md -s -r 0...${{ env.LAST_RELEASE_TAG }}
+          conventional-changelog -o -i CHANGELOG.md -s -r 0...${{ env.LAST_RELEASE_TAG }}
 
       - name: Update Release Description
         if: ${{ github.event.release.published_at == env.LATEST_PUBLISHED_AT }}
