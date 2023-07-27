@@ -1,11 +1,7 @@
 name: Release
-"on":
-  push:
-    branches:
-      - master
-      - next
-      - beta
-      - "*.x"
+on:
+  release:
+    types: [created]
 permissions:
   contents: read # for checkout
 jobs:
