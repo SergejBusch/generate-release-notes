@@ -1,4 +1,4 @@
-name: Update Release Description
+name: Update Release Description with Changelog
 
 on:
   release:
@@ -13,32 +13,43 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Fetch Latest Release Publication Date
-        id: get_latest_release
+      - name: Fetch Last Release Tag Name
+        id: get_last_release
         run: |
           # Get the owner and repository from the GitHub repository URL
           owner=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           repo=$(echo "${{ github.repository }}" | cut -d'/' -f2)
 
-          # Fetch the latest release information using GitHub API
-          latest_release=$(curl -s -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$owner/$repo/releases/latest")
+          # Fetch the last release information using GitHub API
+          last_release=$(curl -s -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$owner/$repo/releases?per_page=1" | jq -r '.[0].tag_name')
 
-          # Extract the publication date of the latest release
-          latest_published_at=$(echo "$latest_release" | jq -r '.published_at')
-
-          # Set the latest publication date as an environment variable
-          echo "LATEST_PUBLISHED_AT=$latest_published_at" >> $GITHUB_ENV
+          # Set the last release tag name as an environment variable
+          echo "LAST_RELEASE_TAG=$last_release" >> $GITHUB_ENV
 
         # Make sure to have jq installed to parse JSON response
         # You can add it by uncommenting the following line
         # - name: Install jq
         #   run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Generate Changelog
+        id: generate_changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Install conventional-changelog-cli
+          npm install -g conventional-changelog-cli
+
+          # Generate the changelog since the penultimate release
+          conventional-changelog -p angular -i CHANGELOG.md -s -r 0...${{ env.LAST_RELEASE_TAG }}
+
       - name: Update Release Description
         if: ${{ github.event.release.published_at == env.LATEST_PUBLISHED_AT }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Append "bla bla" to the release description using gh CLI
-          updated_description="${{ github.event.release.body }}"$'\n'"bla bla"
+          # Read the changelog content from CHANGELOG.md
+          changelog=$(cat CHANGELOG.md)
+
+          # Append the changelog to the release description using gh CLI
+          updated_description="${{ github.event.release.body }}"$'\n'"$changelog"
           gh release edit "${{ github.event.release.tag_name }}" --notes="$updated_description"
