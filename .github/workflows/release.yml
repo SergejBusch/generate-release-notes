@@ -13,18 +13,32 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Fetch Latest Release Publication Date
+        id: get_latest_release
+        run: |
+          # Get the owner and repository from the GitHub repository URL
+          owner=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          repo=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+
+          # Fetch the latest release information using GitHub API
+          latest_release=$(curl -s -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$owner/$repo/releases/latest")
+
+          # Extract the publication date of the latest release
+          latest_published_at=$(echo "$latest_release" | jq -r '.published_at')
+
+          # Store the latest publication date as an output
+          echo "::set-output name=latest_published_at::$latest_published_at"
+
+        # Make sure to have jq installed to parse JSON response
+        # You can add it by uncommenting the following line
+        # - name: Install jq
+        #   run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Update Release Description
+        if: ${{ github.event.release.published_at == needs.get_latest_release.outputs.latest_published_at }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch the last release's tag name using gh CLI
-          last_tag=$(gh release list --limit 1 | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1)
-
-          # Check if the current release is the last one
-          if [ "${{ github.event.release.tag_name }}" = "$last_tag" ]; then
-            # Append "bla bla" to the release description using gh CLI
-            updated_description="${{ github.event.release.body }}"$'\n'"bla bla"
-            gh release edit "${{ github.event.release.tag_name }}" --notes="$updated_description"
-          else
-            echo "This is not the last release. Skipping update."
-          fi
+          # Append "bla bla" to the release description using gh CLI
+          updated_description="${{ github.event.release.body }}"$'\n'"bla bla"
+          gh release edit "${{ github.event.release.tag_name }}" --notes="$updated_description"
