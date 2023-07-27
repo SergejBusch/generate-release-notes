@@ -46,6 +46,16 @@ jobs:
           escaped_changelog=$(echo "$changelog" | awk '{printf "%s\\n", $0}')
           echo "CHANGELOG=$escaped_changelog" >> $GITHUB_ENV
 
+      - name: Debug - Print Changelog
+        run: |
+          echo "Changelog:"
+          echo "${{ env.CHANGELOG }}"
+
+      - name: Debug - Print Release Description
+        run: |
+          echo "Release Description:"
+          echo "${{ github.event.release.body }}"
+
       - name: Update Release Description
         if: ${{ github.event.release.published_at == env.LATEST_PUBLISHED_AT }}
         env:
