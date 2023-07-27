@@ -23,7 +23,8 @@ jobs:
           # Check if the current release is the last one
           if [ "${{ github.event.release.tag_name }}" = "$last_tag" ]; then
             # Append "bla bla" to the release description using gh CLI
-            echo "bla bla" | gh release edit "${{ github.event.release.tag_name }}" --notes -
+            updated_description="${{ github.event.release.body }}"$'\n'"bla bla"
+            gh release edit "${{ github.event.release.tag_name }}" --notes="$updated_description"
           else
             echo "This is not the last release. Skipping update."
           fi
