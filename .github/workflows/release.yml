@@ -13,13 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Create Release
+        run: gh release create ${{ github.event.release.tag_name }} --title ${{ github.event.release.tag_name }} --notes ""
+
       - name: Update Release Description
         run: |
-          # Get the tag name of the newly created release
-          tag_name=$(git describe --tags --abbrev=0 ${{ github.event.release.commit_id }})
-          
-          # Add your custom text to the existing release description
-          new_description="${{ github.event.release.body }}"$'\n'"bla bla"
-          
-          # Update the release using the updated description
-          curl -X PATCH -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d '{"body": "'"$new_description"'"}' "https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}"
+          echo "bla bla" | gh release edit ${{ github.event.release.tag_name }} --notes -
