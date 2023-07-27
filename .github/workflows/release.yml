@@ -57,7 +57,7 @@ jobs:
           echo "${{ github.event.release.body }}"
 
       - name: Update Release Description
-        if: ${{ github.event.release.published_at == env.LATEST_PUBLISHED_AT }}
+        if: ${{ env.LAST_RELEASE_TAG != '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
