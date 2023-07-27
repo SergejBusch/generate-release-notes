@@ -42,8 +42,9 @@ jobs:
           # Generate the changelog since the penultimate release
           changelog=$(conventional-changelog -p angular -r 0...${{ env.LAST_RELEASE_TAG }})
 
-          # Set the changelog as an environment variable
-          echo "CHANGELOG=$changelog" >> $GITHUB_ENV
+          # Escape newlines in the changelog before setting it as an environment variable
+          escaped_changelog=$(echo "$changelog" | awk '{printf "%s\\n", $0}')
+          echo "CHANGELOG=$escaped_changelog" >> $GITHUB_ENV
 
       - name: Update Release Description
         if: ${{ github.event.release.published_at == env.LATEST_PUBLISHED_AT }}
